@@ -1,0 +1,87 @@
+import yaml, pdb, traceback, time, pause, datetime
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from fit4less import Fit4LessBot
+from validate_email import validate_email
+
+def init_browser():
+    browser_options = Options()
+    options = ['--disable-blink-features', '--no-sandbox', '--start-maximized', '--disable-extensions',
+               '--ignore-certificate-errors', '--disable-blink-features=AutomationControlled']
+
+    for option in options:
+        browser_options.add_argument(option)
+
+    driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=browser_options)
+
+    driver.set_window_position(0, 0)
+    driver.maximize_window()
+
+    return driver
+
+
+def validate_yaml():
+    with open("config.yaml", 'r') as stream:
+        try:
+            parameters = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            raise exc
+
+    mandatory_params = ['email', 'password', 'bookingDay', 'bookingTime', 'club']
+
+    for mandatory_param in mandatory_params:
+        if mandatory_param not in parameters:
+            raise Exception(mandatory_param + ' is not inside the yml file!')
+
+    assert validate_email(parameters['email'])
+    assert 0 <= parameters['bookingDay'] <= 3
+    assert len(parameters['password']) > 0
+    assert 'AM' in parameters['bookingTime'] or 'PM' in parameters['bookingTime']
+
+    return parameters
+
+
+if __name__ == '__main__':
+    parameters = validate_yaml()
+    browser = None
+    while True:
+        try:
+            browser = init_browser()
+
+            bot = Fit4LessBot(parameters, browser)
+
+            bot.login()
+
+            time.sleep(5)
+
+            bot.check_for_500_error()
+
+            if bot.is_fully_booked():
+                print("We are fully booked! Nothing to do today.")
+                break
+
+            bot.go_to_club()
+            current_time = datetime.datetime.now()
+            date = (current_time + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0)
+
+            if (current_time + datetime.timedelta(minutes=10)) >= date:
+                print("Sleeping until 12AM")
+                pause.until(date)
+
+            while not bot.go_to_day():
+                bot.check_for_500_error()
+
+            while not bot.book_slot():
+                bot.check_for_500_error()
+
+        except:
+            traceback.print_exc()
+            browser.close()
+            print("There was an error! Restarting the bot.")
+    browser.close()
+
+
+
+
+
