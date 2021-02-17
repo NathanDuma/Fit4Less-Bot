@@ -53,8 +53,6 @@ if __name__ == '__main__':
 
             bot.login()
 
-            time.sleep(5)
-
             bot.check_for_500_error()
 
             if bot.is_fully_booked():
