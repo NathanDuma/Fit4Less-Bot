@@ -13,7 +13,7 @@ def init_browser():
     for option in options:
         browser_options.add_argument(option)
 
-    driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=browser_options)
+    driver = webdriver.Chrome(ChromeDriverManager().install(), options=browser_options)
 
     driver.set_window_position(0, 0)
     driver.maximize_window()
@@ -62,6 +62,7 @@ if __name__ == '__main__':
                 break
 
             bot.go_to_club()
+            bot.check_for_500_error()
             current_time = datetime.datetime.now()
             date = (current_time + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0)
 
@@ -75,6 +76,7 @@ if __name__ == '__main__':
             while not bot.book_slot():
                 bot.check_for_500_error()
 
+            break
         except:
             traceback.print_exc()
             browser.close()

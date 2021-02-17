@@ -1,9 +1,6 @@
 import time, random, csv, pyautogui, pdb, traceback, sys, datetime
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from itertools import product
 
 
 class Fit4LessBot:
@@ -15,7 +12,6 @@ class Fit4LessBot:
         self.booking_time = parameters['bookingTime'].strip()
         self.use_club_name = parameters['club']['useClubName']
         self.club_name = parameters['club']['clubName'].lower()
-        #pdb.set_trace()
         date = datetime.datetime.now() + datetime.timedelta(days=self.booking_day)
         self.date = date.strftime('%A') + ', ' + str(date.day) + ' ' + date.strftime('%B') + ' ' + str(date.year)
         self.date_string = 'date_' + str(date.year) + '-' + '{:02d}'.format(date.month) + '-' + '{:02d}'.format(date.day)
@@ -24,23 +20,16 @@ class Fit4LessBot:
     def login(self):
         try:
             self.browser.get("https://myfit4less.gymmanager.com/portal/login.asp");
-            #time.sleep(random.uniform(5, 10))
-            #pdb.set_trace()
             self.browser.find_element_by_id("emailaddress").send_keys(self.email)
             self.browser.find_element_by_id("password").send_keys(self.password)
             self.browser.find_element_by_id("password").send_keys(Keys.ENTER)
-            #time.sleep(random.uniform(2, 5))
         except TimeoutException:
             raise Exception("Could not login!")
 
     def book_slot(self):
         try:
-            open_slots = self.browser.find_ements_by_xpath('(/html/body/div[5]/div/div/div/div/form/div[@class=\'available-slots\'])[2]/div')
-            open_slots = {slot_info.get_attribute('data-slottime').strip():(slot_info.get_attribute('id')[4:],
-                                                                    slot_info.get_attribute('data-slotclub'),
-                                                                    slot_info.get_attribute('data-slotdate'),
-                                                                    slot_info.get_attribute('data-slottime'))
-                                                                    for slot_info in open_slots}
+            open_slots = self.browser.find_elements_by_xpath('(/html/body/div[5]/div/div/div/div/form/div[@class=\'available-slots\'])[2]/div')
+            open_slots = {slot_info.get_attribute('data-slottime').strip()[3:]:(slot_info.get_attribute('id')[5:],slot_info.get_attribute('data-slotclub'),slot_info.get_attribute('data-slotdate'),slot_info.get_attribute('data-slottime')) for slot_info in open_slots}
 
             if self.booking_time in open_slots:
                 slot_info = open_slots[self.booking_time]
@@ -51,25 +40,23 @@ class Fit4LessBot:
                               "$(\"#doorPolicyForm\").submit();"
                 self.browser.execute_script(book_script)
 
-                while True:
-                    try:
-                        seconds_to_wait = 40
-                        done = False
-                        current_time = datetime.datetime.now()
-                        stop_time = current_time + datetime.timedelta(second=seconds_to_wait)
+                try:
+                    seconds_to_wait = 40
+                    done = False
+                    current_time = datetime.datetime.now()
+                    stop_time = current_time + datetime.timedelta(seconds=seconds_to_wait)
 
-                        # Wait until it is booked, run for 40 seconds
-                        while current_time < stop_time and not done:
-                            if self.timeslot_booked(block_name):
-                                print("We are done booking!!")
-                                return True
-                            else:
-                                print("Booking is not finished yet!")
-                                raise Exception("Not done booking yet!")
-                            current_time = datetime.datetime.now()
-                    except:
-                        break
-                        pass
+                    # Wait until it is booked, run for 40 seconds
+                    while current_time < stop_time and not done:
+                        self.check_for_500_error()
+                        if self.timeslot_booked(block_name):
+                            print("We are done booking!!")
+                            return True
+                        else:
+                            print("We are not done booking yet!!")
+                        current_time = datetime.datetime.now()
+                except:
+                    pass
 
             self.refresh()
             return False
@@ -77,42 +64,41 @@ class Fit4LessBot:
             traceback.print_exc()
             print("Failed to book the times!")
             self.refresh()
+            return False
             pass
 
     def go_to_day(self):
-        pdb.set_trace()
         try:
             script = "processClubDate(\"" + self.date_string + "\")"
 
             self.browser.execute_script(script)
 
-            while True:
-                try:
-                    day_info = self.browser.find_element_by_xpath('//form[@id=\'doorPolicyForm\']/h2')
-                    seconds_to_wait = 30
-                    done = False
-                    current_time = datetime.datetime.now()
-                    stop_time = current_time + datetime.timedelta(second=seconds_to_wait)
+            day_info = None
+            seconds_to_wait = 30
+            done = False
+            current_time = datetime.datetime.now()
+            stop_time = current_time + datetime.timedelta(seconds=seconds_to_wait)
 
-                    # Wait until it is booked, run for 30 seconds
-                    while current_time < stop_time and not done:
-                        if self.date in day_info:
-                            print("We are done choosing the day!!")
-                            done = True
-                            break
-                        else:
-                            print("We didn't choose the day yet!!!")
-                        current_time = datetime.datetime.now()
-                    if not done:
-                        self.refresh()
-                    return done
+            # Wait until it is booked, run for 30 seconds
+            while current_time < stop_time and not done:
+                self.check_for_500_error()
+                try:
+                    day_info = self.browser.find_element_by_xpath('//form[@id=\'doorPolicyForm\']/h2').text
                 except:
-                    break
                     pass
+                if self.date in day_info:
+                    print("We are done choosing the day!!")
+                    done = True
+                else:
+                    print("We didn't choose the day yet!!!")
+                current_time = datetime.datetime.now()
+            if not done:
+                self.refresh()
+            return done
         except:
+            self.refresh()
             return False
             pass
-        return False
 
     def go_to_club(self):
         if not self.use_club_name:
@@ -150,8 +136,7 @@ class Fit4LessBot:
 
     def timeslot_booked(self, booking_info):
         try:
-            bookings = self.browser.find_elements_by_xpath(
-                '(/html/body/div[5]/div/div/div/div/form/div[@class=\'reserved-slots\'])[1]/div')
+            bookings = self.browser.find_elements_by_xpath('(/html/body/div[5]/div/div/div/div/form/div[@class=\'reserved-slots\'])[1]/div')
 
             for booking in bookings:
                 slot_club, slot_date, slot_time, block_text = "", "", "", ""
@@ -171,7 +156,7 @@ class Fit4LessBot:
 
                 block_name = ', '.join([slot_club, slot_date, slot_time])
 
-                if booking_info in block_name:
+                if booking_info.lower().strip() in block_name.lower().strip() or slot_date.lower().strip() in booking_info.lower().strip():
                     return True
 
             return False
