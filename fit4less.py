@@ -89,6 +89,8 @@ class Fit4LessBot:
                 if self.date in day_info:
                     print("We are done choosing the day!!")
                     done = True
+                elif "not possible to book for this day" in self.browser.page_source:
+                    self.refresh()
                 else:
                     print("We didn't choose the day yet!!!")
                 current_time = datetime.datetime.now()
