@@ -4,18 +4,20 @@ from selenium.webdriver.common.keys import Keys
 
 
 class Fit4LessBot:
-    def __init__(self, parameters, driver):
-        self.browser = driver
+    def __init__(self, parameters):
         self.email = parameters['email']
         self.password = parameters['password']
         self.booking_day = parameters['bookingDay']
-        self.booking_time = parameters['bookingTime'].strip()
         self.use_club_name = parameters['club']['useClubName']
         self.club_name = parameters['club']['clubName'].lower()
         date = datetime.datetime.now() + datetime.timedelta(days=self.booking_day)
         self.date = date.strftime('%A') + ', ' + str(date.day) + ' ' + date.strftime('%B') + ' ' + str(date.year)
         self.date_string = 'date_' + str(date.year) + '-' + '{:02d}'.format(date.month) + '-' + '{:02d}'.format(date.day)
+        self.booking_time = parameters['bookingTimes'][date.strftime('%A')].strip()
 
+
+    def not_booking(self):
+        return 'None' in self.booking_time
 
     def login(self):
         try:
@@ -67,6 +69,7 @@ class Fit4LessBot:
             return False
             pass
 
+
     def go_to_day(self):
         try:
             script = "processClubDate(\"" + self.date_string + "\")"
@@ -101,6 +104,7 @@ class Fit4LessBot:
             self.refresh()
             return False
             pass
+
 
     def go_to_club(self):
         if not self.use_club_name:
@@ -172,6 +176,9 @@ class Fit4LessBot:
 
         if '500' in title:
             raise Exception("There was a 500 error!")
+
+    def add_browser(self, driver):
+        self.browser = driver
 
     def refresh(self):
         self.browser.refresh()

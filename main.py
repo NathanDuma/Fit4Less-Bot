@@ -28,7 +28,7 @@ def validate_yaml():
         except yaml.YAMLError as exc:
             raise exc
 
-    mandatory_params = ['email', 'password', 'bookingDay', 'bookingTime', 'club']
+    mandatory_params = ['email', 'password', 'bookingDay', 'bookingTimes', 'club']
 
     for mandatory_param in mandatory_params:
         if mandatory_param not in parameters:
@@ -37,7 +37,11 @@ def validate_yaml():
     assert validate_email(parameters['email'])
     assert 0 <= parameters['bookingDay'] <= 3
     assert len(parameters['password']) > 0
-    assert 'AM' in parameters['bookingTime'] or 'PM' in parameters['bookingTime']
+
+    times = parameters['bookingTimes']
+
+    for time_slot in times:
+        'AM' in time_slot or 'PM' in time_slot or 'None' in time_slot
 
     return parameters
 
@@ -47,9 +51,15 @@ if __name__ == '__main__':
     browser = None
     while True:
         try:
-            browser = init_browser()
 
-            bot = Fit4LessBot(parameters, browser)
+            bot = Fit4LessBot(parameters)
+
+            if bot.not_booking():
+                print("Skipping booking for today since the date is set to None.")
+                break
+
+            browser = init_browser()
+            bot.add_browser(browser)
 
             bot.login()
 
@@ -79,7 +89,8 @@ if __name__ == '__main__':
             traceback.print_exc()
             browser.close()
             print("There was an error! Restarting the bot.")
-    browser.close()
+    if browser is not None:
+        browser.close()
 
 
 
