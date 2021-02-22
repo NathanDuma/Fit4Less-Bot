@@ -1,2 +1,14 @@
 $date = ("{0:yyyyMMddHHmm}" -f (Get-Date))
-python3 main.py > logs$($date).txt
+echo "Starting up!" >> ./logs/logs$($date).txt
+while ($true) {
+	echo "Running python script!" >> ./logs/logs$($date).txt
+	python3 main.py >> ./logs/logs$($date).txt
+	if (!($?)){
+		echo "Error" >> ./logs/logs$($date).txt
+		break
+	}
+	else
+	{
+		echo "We are done all this!" >> ./logs/logs$($date).txt
+	}
+}

@@ -49,10 +49,10 @@ def validate_yaml():
 if __name__ == '__main__':
     parameters = validate_yaml()
     browser = None
+    bot = Fit4LessBot(parameters)
+
     while True:
         try:
-
-            bot = Fit4LessBot(parameters)
 
             if bot.not_booking():
                 print("Skipping booking for today since the date is set to None.")
@@ -74,15 +74,15 @@ if __name__ == '__main__':
             current_time = datetime.datetime.now()
             date = (current_time + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0)
 
+            while not bot.go_to_day():
+                bot.check_for_500_error()
+
             if (current_time + datetime.timedelta(minutes=10)) >= date:
                 print("Sleeping until 12AM")
                 pause.until(date)
 
-            while not bot.go_to_day():
-                bot.check_for_500_error()
-
             while not bot.book_slot():
-                bot.check_for_500_error()
+                pass
 
             break
         except:

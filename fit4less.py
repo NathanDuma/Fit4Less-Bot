@@ -22,14 +22,39 @@ class Fit4LessBot:
     def login(self):
         try:
             self.browser.get("https://myfit4less.gymmanager.com/portal/login.asp");
-            self.browser.find_element_by_id("emailaddress").send_keys(self.email)
-            self.browser.find_element_by_id("password").send_keys(self.password)
-            self.browser.find_element_by_id("password").send_keys(Keys.ENTER)
+
+            try:
+                seconds_to_wait = 120
+                current_time = datetime.datetime.now()
+                stop_time = current_time + datetime.timedelta(seconds=seconds_to_wait)
+
+                # Wait until it is booked, run for 40 seconds
+                while current_time < stop_time:
+                    self.check_for_500_error()
+                    try:
+                        self.browser.find_element_by_id("emailaddress").send_keys(self.email)
+                        self.browser.find_element_by_id("password").send_keys(self.password)
+                        self.browser.find_element_by_id("password").send_keys(Keys.ENTER)
+                        return
+                    except:
+                        pass
+                    current_time = datetime.datetime.now()
+
+                raise Exception("Waiting for login failed")
+            except TimeoutException:
+                raise Exception("Could not login!")
         except TimeoutException:
             raise Exception("Could not login!")
 
     def book_slot(self):
         try:
+            self.refresh()
+
+            if "not possible to book for this day" in self.browser.page_source:
+                self.refresh()
+
+            self.check_for_500_error()
+
             open_slots = self.browser.find_elements_by_xpath('(/html/body/div[5]/div/div/div/div/form/div[@class=\'available-slots\'])[2]/div')
             open_slots = {slot_info.get_attribute('data-slottime').strip()[3:]:(slot_info.get_attribute('id')[5:],slot_info.get_attribute('data-slotclub'),slot_info.get_attribute('data-slotdate'),slot_info.get_attribute('data-slottime')) for slot_info in open_slots}
 
@@ -43,15 +68,17 @@ class Fit4LessBot:
                 self.browser.execute_script(book_script)
 
                 try:
-                    seconds_to_wait = 40
+                    seconds_to_wait = 300
                     done = False
                     current_time = datetime.datetime.now()
                     stop_time = current_time + datetime.timedelta(seconds=seconds_to_wait)
 
-                    # Wait until it is booked, run for 40 seconds
+                    # Wait until it is booked, run for 300 seconds
                     while current_time < stop_time and not done:
-                        self.check_for_500_error()
-                        if self.timeslot_booked(block_name):
+                        if '500' in self.browser.title:
+                            self.refresh()
+                            self.browser.execute_script(book_script)
+                        elif self.timeslot_booked(block_name):
                             print("We are done booking!!")
                             return True
                         else:
@@ -60,12 +87,10 @@ class Fit4LessBot:
                 except:
                     pass
 
-            self.refresh()
             return False
         except:
             traceback.print_exc()
             print("Failed to book the times!")
-            self.refresh()
             return False
             pass
 
@@ -89,11 +114,9 @@ class Fit4LessBot:
                     day_info = self.browser.find_element_by_xpath('//form[@id=\'doorPolicyForm\']/h2').text
                 except:
                     pass
-                if self.date in day_info:
+                if self.date in day_info or "not possible to book for this day" in self.browser.page_source:
                     print("We are done choosing the day!!")
                     done = True
-                elif "not possible to book for this day" in self.browser.page_source:
-                    self.refresh()
                 else:
                     print("We didn't choose the day yet!!!")
                 current_time = datetime.datetime.now()
