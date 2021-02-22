@@ -82,7 +82,8 @@ if __name__ == '__main__':
                 pause.until(date)
 
             while not bot.book_slot():
-                pass
+                if parameters['bookingDay'] != 3:
+                    bot.check_for_500_error()
 
             break
         except:
