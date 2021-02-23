@@ -48,6 +48,9 @@ class Fit4LessBot:
 
     def book_slot(self):
         try:
+            if self.timeslot_booked(self.date):
+                return True
+                
             self.refresh()
 
             if "not possible to book for this day" in self.browser.page_source:

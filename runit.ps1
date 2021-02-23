@@ -5,10 +5,10 @@ while ($true) {
 	python3 main.py >> ./logs/logs$($date).txt
 	if (!($?)){
 		echo "Error" >> ./logs/logs$($date).txt
-		break
 	}
 	else
 	{
 		echo "We are done all this!" >> ./logs/logs$($date).txt
+		break
 	}
 }
