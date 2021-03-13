@@ -15,7 +15,7 @@ Next, you need to fill out the config.yaml file.
 ```yaml
 email: email@domain.com
 password: mypassword
-bookingDay: 1 # how many days in advance, put 3 if you are running it the night before via a cronjob
+bookingDay: 3 # how many days in advance, put 3 if you are running it the night before via a cronjob
 bookingTimes: # Times must be exact, in hh:MM AM/PM format or None for days you don't want to book
  Monday: 7:00 PM
  Tuesday: 7:00 PM
@@ -27,6 +27,7 @@ bookingTimes: # Times must be exact, in hh:MM AM/PM format or None for days you 
 club:
   useClubName: False # Set to True to change to this club
   clubName: Waterloo Erb Street # Exact name of the club as on the club selection list
+headless: True
 ```
 
 

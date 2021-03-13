@@ -48,13 +48,15 @@ class Fit4LessBot:
 
     def book_slot(self):
         try:
-            if self.timeslot_booked(self.date):
-                return True
-                
             self.refresh()
 
             if "not possible to book for this day" in self.browser.page_source:
                 self.refresh()
+
+            if "maximum personal reservations reached" in self.browser.page_source.lower():
+                return True
+            elif "maximum amount of reservations allowed per day has been reached" in self.browser.page_source.lower():
+                return True
 
             self.check_for_500_error()
 
@@ -81,6 +83,10 @@ class Fit4LessBot:
                         if '500' in self.browser.title:
                             self.refresh()
                             self.browser.execute_script(book_script)
+                        elif "maximum personal reservations reached" in self.browser.page_source.lower():
+                            return True
+                        elif "maximum amount of reservations allowed per day has been reached." in self.browser.page_source.lower():
+                            return True
                         elif self.timeslot_booked(block_name):
                             print("We are done booking!!")
                             return True

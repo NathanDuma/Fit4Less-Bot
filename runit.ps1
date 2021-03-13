@@ -1,14 +1,15 @@
 $date = ("{0:yyyyMMddHHmm}" -f (Get-Date))
-echo "Starting up!" >> ./logs/logs$($date).txt
+$file = "./logs/logs$($date).txt"
+echo "Starting up!" >> $file
 while ($true) {
-	echo "Running python script!" >> ./logs/logs$($date).txt
-	python3 main.py >> ./logs/logs$($date).txt
+	echo "Running python script!" >> $file
+	python3 main.py >> $file
 	if (!($?)){
-		echo "Error" >> ./logs/logs$($date).txt
+		echo "Error" >> $file
 	}
 	else
 	{
-		echo "We are done all this!" >> ./logs/logs$($date).txt
+		echo "We are done all this!" >> $file
 		break
 	}
 }
