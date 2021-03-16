@@ -10,7 +10,7 @@ def init_browser(headless):
     options = ['--disable-blink-features', '--no-sandbox', '--start-maximized', '--disable-extensions',
                '--ignore-certificate-errors', '--disable-blink-features=AutomationControlled']
     if headless:
-        options.append(headless)
+        options.append('--headless')
 
     for option in options:
         browser_options.add_argument(option)
@@ -66,7 +66,8 @@ if __name__ == '__main__':
                 hour += 12
             minute = int(bot.booking_time.split(' ')[0].split(':')[1])
 
-            date = (datetime.datetime.now().replace(hour=hour, minute=minute, second=0) - datetime.timedelta(minutes=2))
+            booking_time = datetime.datetime.now().replace(hour=hour, minute=minute, second=0)
+            date = (booking_time - datetime.timedelta(minutes=2))
             pause.until(date)
 
             browser = init_browser(parameters['headless'])
@@ -83,16 +84,14 @@ if __name__ == '__main__':
             bot.go_to_club()
             bot.check_for_500_error()
 
+            pause.until(booking_time)
+
             while not bot.go_to_day():
                 bot.check_for_500_error()
-
-            date = (datetime.datetime.now().replace(hour=hour, minute=minute, second=0))
-            pause.until(date)
 
             while not bot.book_slot():
                 bot.check_for_500_error()
                 time.sleep(random.uniform(0.8, 1.8))
-
 
             break
         except:

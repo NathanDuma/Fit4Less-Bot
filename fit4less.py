@@ -162,6 +162,14 @@ class Fit4LessBot:
         try:
             bookings = self.browser.find_elements_by_xpath('(/html/body/div[5]/div/div/div/div/form/div[@class=\'reserved-slots\'])[1]/div')
 
+            date = datetime.datetime.now()
+            current_date = date.strftime('%A') + ', ' + str(date.day) + ' ' + date.strftime('%B') + ' ' + str(date.year)
+
+            for booking in bookings:
+                if current_date in booking.text:
+                    print("We are fully booked but we will wait since we can book a slot today!")
+                    return False
+
             if len(bookings) > 1:
                 return True
             else:
