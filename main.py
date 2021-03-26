@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 print("Skipping booking for today since the date is set to None.")
                 break
             hour = int(bot.booking_time.split(' ')[0].split(':')[0])
-            if 'PM' in bot.booking_time:
+            if 'PM' in bot.booking_time and '12' not in bot.booking_time:
                 hour += 12
             minute = int(bot.booking_time.split(' ')[0].split(':')[1])
 
